@@ -1,0 +1,701 @@
+openapi: 3.0.3
+info:
+  title: Roamster – Clothing, Food, Photo & E-commerce APIs
+  description: |
+    API contract for the four microservices owned in this module:
+    - **Clothing Service** (port 8081) – recommendations + rent/buy
+    - **Food Service** (port 8082) – food recommendations
+    - **Photo Service** (port 8083) – best-shot / pose recommendations
+    - **E-commerce Service** (port 8084) – orders, merchants, bookings
+  version: 1.0.0
+  contact:
+    name: Roamster Backend Team
+
+servers:
+  - url: http://localhost:8081
+    description: Clothing Service (local)
+  - url: http://localhost:8082
+    description: Food Service (local)
+  - url: http://localhost:8083
+    description: Photo Service (local)
+  - url: http://localhost:8084
+    description: E-commerce Service (local)
+
+tags:
+  - name: Clothing – Recommendations
+  - name: Clothing – Orders
+  - name: Food – Recommendations
+  - name: Photo – Recommendations
+  - name: Ecommerce – Orders
+  - name: Ecommerce – Merchants
+
+# ─────────────────────────────────────────────────────────────────────────────
+paths:
+
+  # ══════════════════════════════════════════════════════════════
+  # CLOTHING SERVICE  (base: http://localhost:8081)
+  # ══════════════════════════════════════════════════════════════
+
+  /api/v1/clothing/recommendations:
+    post:
+      tags: [Clothing – Recommendations]
+      summary: Generate a clothing recommendation for a trip
+      operationId: generateClothingRecommendation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClothingRecommendationRequest'
+            example:
+              tripId: 101
+              userId: 42
+              destination: "Goa"
+              season: "SUMMER"
+              weather: "HOT"
+              timeOfDay: "MORNING"
+              gender: "FEMALE"
+              ageGroup: "18-30"
+              clothingSize: "M"
+              travelType: "COUPLE"
+              travelStyle: "AESTHETIC"
+              comfortLevel: "MODERATE"
+              activityIntensity: "LOW"
+              socialMediaGoal: true
+      responses:
+        '201':
+          description: Recommendation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClothingRecommendationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/clothing/recommendations/trip/{tripId}:
+    get:
+      tags: [Clothing – Recommendations]
+      summary: Get all clothing recommendations for a trip
+      operationId: getClothingRecommendationsForTrip
+      parameters:
+        - $ref: '#/components/parameters/tripId'
+      responses:
+        '200':
+          description: List of clothing recommendations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClothingRecommendationResponse'
+
+  /api/v1/clothing/orders:
+    post:
+      tags: [Clothing – Orders]
+      summary: Place a clothing rent or buy order
+      operationId: placeClothingOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClothingOrderRequest'
+            example:
+              userId: 42
+              tripId: 101
+              merchantId: 7
+              recommendationId: 55
+              orderType: "RENT"
+              totalAmount: 499.00
+              deliveryAddressId: 3
+              rentalStartDate: "2026-04-10T10:00:00"
+              rentalEndDate: "2026-04-15T10:00:00"
+      responses:
+        '201':
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClothingOrderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/clothing/orders/{orderId}/status:
+    patch:
+      tags: [Clothing – Orders]
+      summary: Update clothing order status
+      operationId: updateClothingOrderStatus
+      parameters:
+        - $ref: '#/components/parameters/orderId'
+        - name: status
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [CONFIRMED, SHIPPED, DELIVERED, CANCELLED, RETURNED]
+      responses:
+        '200':
+          description: Order status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClothingOrderResponse'
+
+  /api/v1/clothing/orders/user/{userId}:
+    get:
+      tags: [Clothing – Orders]
+      summary: Get all clothing orders for a user
+      operationId: getUserClothingOrders
+      parameters:
+        - $ref: '#/components/parameters/userId'
+      responses:
+        '200':
+          description: List of user's clothing orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClothingOrderResponse'
+
+  # ══════════════════════════════════════════════════════════════
+  # FOOD SERVICE  (base: http://localhost:8082)
+  # ══════════════════════════════════════════════════════════════
+
+  /api/v1/food/recommendations:
+    post:
+      tags: [Food – Recommendations]
+      summary: Generate a food recommendation for a trip
+      operationId: generateFoodRecommendation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FoodRecommendationRequest'
+            example:
+              tripId: 101
+              userId: 42
+              destination: "Rajasthan"
+              timeOfDay: "AFTERNOON"
+              dietaryPreference: "VEG"
+              travelType: "FAMILY"
+              hasKids: false
+              hasElderly: true
+              spicePreference: "LOW"
+              comfortLevel: "MODERATE"
+      responses:
+        '201':
+          description: Food recommendation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoodRecommendationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/food/recommendations/trip/{tripId}:
+    get:
+      tags: [Food – Recommendations]
+      summary: Get all food recommendations for a trip
+      operationId: getFoodRecommendationsForTrip
+      parameters:
+        - $ref: '#/components/parameters/tripId'
+      responses:
+        '200':
+          description: List of food recommendations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FoodRecommendationResponse'
+
+  /api/v1/food/recommendations/trip/{tripId}/time:
+    get:
+      tags: [Food – Recommendations]
+      summary: Get food recommendations filtered by time of day
+      operationId: getFoodByTimeOfDay
+      parameters:
+        - $ref: '#/components/parameters/tripId'
+        - name: timeOfDay
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [MORNING, AFTERNOON, EVENING, NIGHT]
+      responses:
+        '200':
+          description: Filtered food recommendations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FoodRecommendationResponse'
+
+  # ══════════════════════════════════════════════════════════════
+  # PHOTO SERVICE  (base: http://localhost:8083)
+  # ══════════════════════════════════════════════════════════════
+
+  /api/v1/photo/recommendations:
+    post:
+      tags: [Photo – Recommendations]
+      summary: Generate a best-shot recommendation for a trip
+      operationId: generatePhotoRecommendation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhotoRecommendationRequest'
+            example:
+              tripId: 101
+              userId: 42
+              destination: "Udaipur"
+              locationType: "WATERFRONT"
+              timeOfDay: "EVENING"
+              travelStyle: "AESTHETIC"
+              socialMediaGoal: true
+              activityIntensity: "LOW"
+              travelType: "COUPLE"
+              colorCombination: "Warm oranges and whites"
+      responses:
+        '201':
+          description: Photo recommendation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhotoRecommendationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/photo/recommendations/trip/{tripId}:
+    get:
+      tags: [Photo – Recommendations]
+      summary: Get all photo recommendations for a trip
+      operationId: getPhotoRecommendationsForTrip
+      parameters:
+        - $ref: '#/components/parameters/tripId'
+      responses:
+        '200':
+          description: List of photo recommendations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PhotoRecommendationResponse'
+
+  /api/v1/photo/recommendations/trip/{tripId}/time:
+    get:
+      tags: [Photo – Recommendations]
+      summary: Get photo recommendations by time of day
+      operationId: getPhotoByTimeOfDay
+      parameters:
+        - $ref: '#/components/parameters/tripId'
+        - name: timeOfDay
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [MORNING, AFTERNOON, EVENING, NIGHT, GOLDEN_HOUR]
+      responses:
+        '200':
+          description: Filtered photo recommendations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PhotoRecommendationResponse'
+
+  # ══════════════════════════════════════════════════════════════
+  # E-COMMERCE SERVICE  (base: http://localhost:8084)
+  # ══════════════════════════════════════════════════════════════
+
+  /api/v1/ecommerce/orders:
+    post:
+      tags: [Ecommerce – Orders]
+      summary: Create a new order (clothing rent/buy or guide booking)
+      operationId: createOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EcommerceOrderRequest'
+      responses:
+        '201':
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EcommerceOrderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/ecommerce/orders/{orderId}:
+    get:
+      tags: [Ecommerce – Orders]
+      summary: Get order by ID
+      operationId: getOrder
+      parameters:
+        - $ref: '#/components/parameters/orderId'
+      responses:
+        '200':
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EcommerceOrderResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/ecommerce/orders/{orderId}/status:
+    patch:
+      tags: [Ecommerce – Orders]
+      summary: Update order status
+      operationId: updateEcommerceOrderStatus
+      parameters:
+        - $ref: '#/components/parameters/orderId'
+        - name: status
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [CONFIRMED, PROCESSING, SHIPPED, DELIVERED, CANCELLED, RETURNED, REFUND_INITIATED, REFUNDED]
+      responses:
+        '200':
+          description: Order status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EcommerceOrderResponse'
+
+  /api/v1/ecommerce/orders/user/{userId}:
+    get:
+      tags: [Ecommerce – Orders]
+      summary: Get all orders for a user
+      parameters:
+        - $ref: '#/components/parameters/userId'
+      responses:
+        '200':
+          description: User orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EcommerceOrderResponse'
+
+  /api/v1/ecommerce/orders/trip/{tripId}:
+    get:
+      tags: [Ecommerce – Orders]
+      summary: Get all orders for a trip
+      parameters:
+        - $ref: '#/components/parameters/tripId'
+      responses:
+        '200':
+          description: Trip orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EcommerceOrderResponse'
+
+  /api/v1/ecommerce/merchants:
+    post:
+      tags: [Ecommerce – Merchants]
+      summary: Register a new merchant
+      operationId: createMerchant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MerchantRequest'
+      responses:
+        '201':
+          description: Merchant created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MerchantResponse'
+    get:
+      tags: [Ecommerce – Merchants]
+      summary: Search merchants by city or type
+      operationId: getMerchants
+      parameters:
+        - name: city
+          in: query
+          schema:
+            type: string
+            example: Jaipur
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [CLOTHING, FOOD, MULTI]
+      responses:
+        '200':
+          description: List of matching merchants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MerchantResponse'
+
+# ─────────────────────────────────────────────────────────────────────────────
+components:
+
+  parameters:
+    tripId:
+      name: tripId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    userId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    orderId:
+      name: orderId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+
+  responses:
+    BadRequest:
+      description: Bad request – validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+
+    # ── Clothing ──────────────────────────────────────────────────────────────
+
+    ClothingRecommendationRequest:
+      type: object
+      required: [tripId, userId]
+      properties:
+        tripId:           { type: integer, format: int64 }
+        userId:           { type: integer, format: int64 }
+        destination:      { type: string }
+        season:           { type: string, enum: [SUMMER, WINTER, MONSOON, AUTUMN, SPRING] }
+        weather:          { type: string, enum: [HOT, COLD, RAINY, ALL] }
+        timeOfDay:        { type: string, enum: [MORNING, AFTERNOON, EVENING, NIGHT] }
+        gender:           { type: string, enum: [MALE, FEMALE, OTHER] }
+        ageGroup:         { type: string, enum: ["18-30", "30-45", "45-60", "60+"] }
+        clothingSize:     { type: string, enum: [S, M, L, XL, XXL] }
+        travelType:       { type: string, enum: [SOLO, COUPLE, FAMILY, KIDS, ELDERLY] }
+        numberOfPeople:   { type: integer }
+        hasKids:          { type: boolean }
+        hasElderly:       { type: boolean }
+        travelStyle:      { type: string, enum: [RELAXED, ADVENTURE, AESTHETIC] }
+        comfortLevel:     { type: string, enum: [BASIC, MODERATE, PREMIUM] }
+        activityIntensity:{ type: string, enum: [LOW, MEDIUM, HIGH] }
+        socialMediaGoal:  { type: boolean }
+
+    ClothingRecommendationResponse:
+      type: object
+      properties:
+        recommendationId:   { type: integer, format: int64 }
+        tripId:             { type: integer, format: int64 }
+        clothingType:       { type: string }
+        fabricType:         { type: string }
+        weatherSuitability: { type: string }
+        comfortLevel:       { type: string }
+        footwearSuggestion: { type: string }
+        colorCombination:   { type: string }
+        accessories:        { type: string }
+        safetyNote:         { type: string }
+        imageReferenceUrl:  { type: string }
+        confidenceScore:    { type: number, format: double }
+        reason:             { type: string }
+        generationSource:   { type: string }
+        validUntil:         { type: string, format: date-time }
+
+    ClothingOrderRequest:
+      type: object
+      required: [userId, tripId, merchantId, recommendationId, orderType, totalAmount]
+      properties:
+        userId:             { type: integer, format: int64 }
+        tripId:             { type: integer, format: int64 }
+        merchantId:         { type: integer, format: int64 }
+        recommendationId:   { type: integer, format: int64 }
+        orderType:          { type: string, enum: [RENT, BUY] }
+        totalAmount:        { type: number, format: double }
+        deliveryAddressId:  { type: integer, format: int64 }
+        rentalStartDate:    { type: string, format: date-time }
+        rentalEndDate:      { type: string, format: date-time }
+
+    ClothingOrderResponse:
+      type: object
+      properties:
+        orderId:          { type: integer, format: int64 }
+        status:           { type: string }
+        orderType:        { type: string }
+        totalAmount:      { type: number }
+        rentalStartDate:  { type: string, format: date-time }
+        rentalEndDate:    { type: string, format: date-time }
+        createdAt:        { type: string, format: date-time }
+
+    # ── Food ──────────────────────────────────────────────────────────────────
+
+    FoodRecommendationRequest:
+      type: object
+      required: [tripId, userId]
+      properties:
+        tripId:             { type: integer, format: int64 }
+        userId:             { type: integer, format: int64 }
+        destination:        { type: string }
+        season:             { type: string }
+        weather:            { type: string }
+        timeOfDay:          { type: string, enum: [MORNING, AFTERNOON, EVENING, NIGHT] }
+        dietaryPreference:  { type: string, enum: [VEG, NON_VEG, VEGAN, JAIN] }
+        ageGroup:           { type: string }
+        travelType:         { type: string, enum: [SOLO, COUPLE, FAMILY, KIDS, ELDERLY] }
+        hasKids:            { type: boolean }
+        hasElderly:         { type: boolean }
+        spicePreference:    { type: string, enum: [LOW, MEDIUM, HIGH] }
+        comfortLevel:       { type: string, enum: [BASIC, MODERATE, PREMIUM] }
+        allergyInfo:        { type: string, description: "Free text – e.g. Peanuts, Gluten" }
+
+    FoodRecommendationResponse:
+      type: object
+      properties:
+        recommendationId:   { type: integer, format: int64 }
+        tripId:             { type: integer, format: int64 }
+        foodType:           { type: string }
+        cuisineType:        { type: string }
+        spiceLevel:         { type: string }
+        suitableFor:        { type: string }
+        bestTime:           { type: string }
+        hygieneLevel:       { type: string }
+        allergyWarning:     { type: string }
+        dishNames:          { type: string }
+        imageReferenceUrl:  { type: string }
+        confidenceScore:    { type: number }
+        reason:             { type: string }
+        validUntil:         { type: string, format: date-time }
+
+    # ── Photo ─────────────────────────────────────────────────────────────────
+
+    PhotoRecommendationRequest:
+      type: object
+      required: [tripId, userId]
+      properties:
+        tripId:             { type: integer, format: int64 }
+        userId:             { type: integer, format: int64 }
+        destination:        { type: string }
+        locationType:       { type: string, enum: [INDOOR, OUTDOOR, ROOFTOP, WATERFRONT] }
+        timeOfDay:          { type: string, enum: [MORNING, AFTERNOON, EVENING, NIGHT] }
+        season:             { type: string }
+        weather:            { type: string }
+        travelStyle:        { type: string, enum: [RELAXED, ADVENTURE, AESTHETIC] }
+        socialMediaGoal:    { type: boolean }
+        activityIntensity:  { type: string, enum: [LOW, MEDIUM, HIGH] }
+        travelType:         { type: string }
+        hasKids:            { type: boolean }
+        hasElderly:         { type: boolean }
+        clothingType:       { type: string }
+        colorCombination:   { type: string }
+
+    PhotoRecommendationResponse:
+      type: object
+      properties:
+        recommendationId:     { type: integer, format: int64 }
+        tripId:               { type: integer, format: int64 }
+        bestTimeOfDay:        { type: string }
+        cameraAngle:          { type: string }
+        cameraOrientation:    { type: string }
+        suggestedPose:        { type: string }
+        lightingCondition:    { type: string }
+        lensSuggestion:       { type: string }
+        locationType:         { type: string }
+        bodyMovementLevel:    { type: string }
+        requiresSpace:        { type: boolean }
+        outfitCompatibility:  { type: string }
+        imageReferenceUrl:    { type: string }
+        confidenceScore:      { type: number }
+        reason:               { type: string }
+        validUntil:           { type: string, format: date-time }
+
+    # ── Ecommerce ─────────────────────────────────────────────────────────────
+
+    EcommerceOrderRequest:
+      type: object
+      required: [userId, tripId, orderType, totalAmount]
+      properties:
+        userId:             { type: integer, format: int64 }
+        tripId:             { type: integer, format: int64 }
+        orderType:          { type: string, enum: [CLOTHING_RENT, CLOTHING_BUY, GUIDE_BOOKING] }
+        totalAmount:        { type: number }
+        merchantId:         { type: integer, format: int64 }
+        guideId:            { type: integer, format: int64 }
+        deliveryAddressId:  { type: integer, format: int64 }
+        rentalStartDate:    { type: string, format: date-time }
+        rentalEndDate:      { type: string, format: date-time }
+        notes:              { type: string }
+
+    EcommerceOrderResponse:
+      type: object
+      properties:
+        orderId:            { type: integer, format: int64 }
+        orderType:          { type: string }
+        status:             { type: string }
+        totalAmount:        { type: number }
+        merchantId:         { type: integer, format: int64 }
+        guideId:            { type: integer, format: int64 }
+        deliveryAddressId:  { type: integer, format: int64 }
+        paymentId:          { type: integer, format: int64 }
+        rentalStartDate:    { type: string, format: date-time }
+        rentalEndDate:      { type: string, format: date-time }
+        createdAt:          { type: string, format: date-time }
+
+    MerchantRequest:
+      type: object
+      required: [name, type]
+      properties:
+        name:           { type: string }
+        type:           { type: string, enum: [CLOTHING, FOOD, MULTI] }
+        contactNumber:  { type: string }
+        city:           { type: string }
+
+    MerchantResponse:
+      type: object
+      properties:
+        merchantId:     { type: integer, format: int64 }
+        name:           { type: string }
+        type:           { type: string }
+        contactNumber:  { type: string }
+        city:           { type: string }
+        rating:         { type: number }
+        isActive:       { type: boolean }
+
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:  { type: string, format: date-time }
+        status:     { type: integer }
+        error:      { type: string }
+        message:    { type: string }
+        path:       { type: string }

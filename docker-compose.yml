@@ -1,0 +1,203 @@
+version: "3.9"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Roamster – Microservices Docker Compose
+# Services owned by this module:
+#   • clothing-service  (port 8081)
+#   • food-service      (port 8082)
+#   • photo-service     (port 8083)
+#   • ecommerce-service (port 8084)
+#
+# Infrastructure:
+#   • PostgreSQL  – one DB instance, 4 separate databases
+#   • RabbitMQ    – message broker for async events
+# ─────────────────────────────────────────────────────────────────────────────
+
+networks:
+  roamster-net:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  rabbitmq-data:
+
+services:
+
+  # ─── Infrastructure ────────────────────────────────────────────────────────
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: roamster-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: roamster
+      POSTGRES_PASSWORD: roamster
+      POSTGRES_MULTIPLE_DATABASES: roamster_clothing,roamster_food,roamster_photo,roamster_ecommerce
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh
+    ports:
+      - "5432:5432"
+    networks:
+      - roamster-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U roamster"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: roamster-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # Management UI → http://localhost:15672
+    networks:
+      - roamster-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Application Services ──────────────────────────────────────────────────
+
+  clothing-service:
+    build:
+      context: ./clothing-service
+      dockerfile: Dockerfile
+    container_name: roamster-clothing
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      SERVER_PORT: 8081
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: roamster_clothing
+      DB_USER: roamster
+      DB_PASS: roamster
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASS: guest
+      ECOMMERCE_SERVICE_URL: http://ecommerce-service:8084
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - roamster-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/actuator/health | grep UP || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  food-service:
+    build:
+      context: ./food-service
+      dockerfile: Dockerfile
+    container_name: roamster-food
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      SERVER_PORT: 8082
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: roamster_food
+      DB_USER: roamster
+      DB_PASS: roamster
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASS: guest
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - roamster-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/actuator/health | grep UP || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  photo-service:
+    build:
+      context: ./photo-service
+      dockerfile: Dockerfile
+    container_name: roamster-photo
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      SERVER_PORT: 8083
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: roamster_photo
+      DB_USER: roamster
+      DB_PASS: roamster
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASS: guest
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - roamster-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8083/actuator/health | grep UP || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  ecommerce-service:
+    build:
+      context: ./ecommerce-service
+      dockerfile: Dockerfile
+    container_name: roamster-ecommerce
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    environment:
+      SERVER_PORT: 8084
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: roamster_ecommerce
+      DB_USER: roamster
+      DB_PASS: roamster
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASS: guest
+      CLOTHING_SERVICE_URL: http://clothing-service:8081
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - roamster-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8084/actuator/health | grep UP || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
