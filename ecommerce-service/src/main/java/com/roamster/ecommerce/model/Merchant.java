@@ -4,18 +4,15 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-
 import java.time.LocalDateTime;
 
 /**
- * Mirrors 'merchant' table. Represents sellers of clothing (rent/buy) or food.
+ * Mirrors 'merchant' table. Represents sellers of clothing (rent/buy) or food .
  */
 @Entity
 @Table(name = "merchant")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Merchant {
-
-    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
