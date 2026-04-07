@@ -42,9 +42,10 @@ services:
       - roamster-net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U roamster"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 30s
+      timeout: 10s
+      retries: 20
+      start_period: 300s
 
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
@@ -62,9 +63,10 @@ services:
       - roamster-net
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 30s
+      timeout: 10s
+      retries: 20
+      start_period: 300s
 
   # ─── Application Services ──────────────────────────────────────────────────
 
@@ -99,8 +101,8 @@ services:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8081/actuator/health | grep UP || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 60s
+      retries: 20
+      start_period: 300s
 
   food-service:
     build:
@@ -132,8 +134,8 @@ services:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8082/actuator/health | grep UP || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 60s
+      retries: 20
+      start_period: 300s  
 
   photo-service:
     build:
@@ -165,8 +167,8 @@ services:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8083/actuator/health | grep UP || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 60s
+      retries: 20
+      start_period: 300s
 
   ecommerce-service:
     build:
@@ -199,5 +201,5 @@ services:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8084/actuator/health | grep UP || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 60s
+      retries: 20
+      start_period: 300s  

@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  user-service:
+    build: .
+    container_name: roamster-user-service
+    ports:
+      - "8001:8001"
+    environment:
+      DATABASE_URL: jdbc:postgresql://db:5432/roamster_users
+      DB_USERNAME: roamster
+      DB_PASSWORD: roamster
+      JWT_SECRET: ${JWT_SECRET:-changeme-super-secret-key-min-32-chars!!}
+      JWT_ACCESS_EXPIRY_MS: 3600000
+      JWT_REFRESH_EXPIRY_MS: 604800000
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - roamster-network
+
+  db:
+    image: postgres:16-alpine
+    container_name: roamster-user-db
+    environment:
+      POSTGRES_USER: roamster
+      POSTGRES_PASSWORD: roamster
+      POSTGRES_DB: roamster_users
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U roamster -d roamster_users"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - roamster-network
+
+volumes:
+  user_db_data:
+
+networks:
+  roamster-network:
+    name: roamster-network
+    driver: bridge
