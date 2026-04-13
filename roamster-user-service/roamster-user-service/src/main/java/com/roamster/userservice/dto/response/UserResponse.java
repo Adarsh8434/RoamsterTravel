@@ -1,13 +1,17 @@
 package com.roamster.userservice.dto.response;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
+
 import java.time.LocalDateTime;
 
-@Data @Builder
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserResponse {
-    private Long id;
-    private String login;
+    Long id;
+    String login;
     private String email;
     private String role;
     private Boolean activate;
