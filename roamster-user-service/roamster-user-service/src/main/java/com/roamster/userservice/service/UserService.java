@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Service
@@ -24,6 +25,8 @@ public class UserService {
     private final UserPreferenceRepository preferenceRepo;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final PasswordResetTokenRepository resetTokenRepo;
+    private final EmailService emailService;
 
     // ── Auth ───────────────────────────────────────────────────
 
@@ -189,5 +192,55 @@ public class UserService {
                 .createdAt(p.getCreatedAt())
                 .updatedAt(p.getUpdatedAt())
                 .build();
+    }
+
+    @Transactional
+    public void forgotPassword(ForgotPasswordRequest req) {
+        User user = userRepo.findByEmail(req.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("No account found with this email"));
+
+        // Delete any existing OTPs for this email
+        resetTokenRepo.deleteByEmail(req.getEmail());
+
+        // Generate 6-digit OTP
+        String otp = String.format("%06d", new java.util.Random().nextInt(999999));
+
+        PasswordResetToken token = PasswordResetToken.builder()
+                .email(req.getEmail())
+                .otp(otp)
+                .expiresAt(LocalDateTime.now().plusMinutes(10))
+                .used(false)
+                .build();
+
+        resetTokenRepo.save(token);
+        emailService.sendOtp(req.getEmail(), otp);
+    }
+
+    public void verifyOtp(VerifyOtpRequest req) {
+        PasswordResetToken token = resetTokenRepo
+                .findByEmailAndOtpAndUsedFalse(req.getEmail(), req.getOtp())
+                .orElseThrow(() -> new UnauthorizedException("Invalid or expired OTP"));
+
+        if (token.getExpiresAt().isBefore(LocalDateTime.now()))
+            throw new UnauthorizedException("OTP has expired");
+    }
+
+    @Transactional
+    public void resetPassword(ResetPasswordRequest req) {
+        PasswordResetToken token = resetTokenRepo
+                .findByEmailAndOtpAndUsedFalse(req.getEmail(), req.getOtp())
+                .orElseThrow(() -> new UnauthorizedException("Invalid or expired OTP"));
+
+        if (token.getExpiresAt().isBefore(LocalDateTime.now()))
+            throw new UnauthorizedException("OTP has expired");
+
+        User user = userRepo.findByEmail(req.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        user.setPasswordHash(passwordEncoder.encode(req.getNewPassword()));
+        userRepo.save(user);
+
+        token.setUsed(true);
+        resetTokenRepo.save(token);
     }
 }
