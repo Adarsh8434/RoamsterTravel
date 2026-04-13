@@ -217,3 +217,5 @@ curl -X POST http://localhost:8081/api/v1/clothing/orders \
 - **Payment Service** (other team) – `paymentId` FK in orders to be linked after payment confirmation
 - **User/Trip Service** (other team) – `userId` and `tripId` validated via REST call (add Feign client)
 - Replace `System.currentTimeMillis()` stubs with actual FK to shared `recommendations` table once DB is unified or an API contract is agreed with the recommendation team
+
+Made by Adarsh kumar choubey
